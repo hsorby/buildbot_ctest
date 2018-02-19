@@ -10,7 +10,7 @@ class CTest(ShellMixin, BuildStep):
     haltOnFailure = 1
     flunkOnFailure = 1
     description = ['running', 'ctest']
-    descriptionDone = 'ctest]
+    descriptionDone = 'ctest']
     command = ['ctest', '-V']
 
     def evaluateCommand(self, cmd):
@@ -18,8 +18,6 @@ class CTest(ShellMixin, BuildStep):
         lines = lo.getStdout()
         re_test_results = re.compile("[0-9]+% tests passed, ([0-9]+) tests failed out of ([0-9]+)");
 
-        print('----------------------------')
-        print(lines)
         passed_groups = map(lambda line: re_test_results.search(line), lines)
         failed = 0
         total = 0
@@ -36,5 +34,4 @@ class CTest(ShellMixin, BuildStep):
             rc = results.FAILURE
 
         return rc
-
 
