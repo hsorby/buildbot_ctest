@@ -10,7 +10,7 @@ class CTest(ShellMixin, BuildStep):
     haltOnFailure = 1
     flunkOnFailure = 1
     description = ['running', 'ctest']
-    descriptionDone = 'ctest']
+    descriptionDone = 'ctest'
     command = ['ctest', '-V']
 
     def evaluateCommand(self, cmd):
