@@ -35,3 +35,12 @@ class CTest(ShellMixin, BuildStep):
 
         return rc
 
+    @defer.inlineCallbacks
+    def run(self):
+        command = self.command
+
+        cmd = yield self.makeRemoteShellCommand(command=command)
+
+        yield self.runCommand(cmd)
+
+        defer.returnValue(cmd.results())
