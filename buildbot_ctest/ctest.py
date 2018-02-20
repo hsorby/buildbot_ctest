@@ -5,7 +5,7 @@ from twisted.internet import defer
 from buildbot.process import results
 from buildbot.process.buildstep import BuildStep
 from buildbot.process.buildstep import ShellMixin
-from buildbot.process.logobserver import BufferLogObserver
+from buildbot.process.logobserver import LineConsumerLogObserver
 
 class CTest(ShellMixin, BuildStep):
 
