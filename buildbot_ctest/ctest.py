@@ -1,3 +1,4 @@
+import re
 
 from twisted.internet import defer
 
@@ -15,27 +16,36 @@ class CTest(ShellMixin, BuildStep):
     descriptionDone = 'ctest'
     command = ['ctest', '-V']
 
-    def evaluateCommand(self, cmd):
-        lo = BufferLogObserver()
-        lines = lo.getStdout()
+    def __init__(self, **kwargs):
+        super(CTest, self).__init__(**kwargs)
+        test_results_parser = LineConsumerLogObserver(self.logConsumer)
+        self.addLogObserver('stdio', test_results_parser)
+        self._failed = None
+        self._total = None
+
+    def logConsumer(self):
         re_test_results = re.compile("[0-9]+% tests passed, ([0-9]+) tests failed out of ([0-9]+)");
 
-        passed_groups = map(lambda line: re_test_results.search(line), lines)
-        failed = 0
-        total = 0
-        for passed_group in passed_groups:
-            if passed_group:
-                failed = int(passed_group.group(1))
-                total = int(passed_group.group(2))
+        while True:
+            stream, line = yield
+            if stream == 'o':
+                groups = re_test_results.search(line)
+                if groups:
+                    self._failed = int(groups.group(1))
+                    self._total = int(groups.group(2))
 
-        self.setTestResults(failed=failed, total=total)
-
-        if failed == 0 and total > 0:
-            rc = results.SUCCESS
+    def getResultSummary(self):
+        if self._total is not None:
+            if self._failed == 0:
+                summary = u'all (%s) tests passed' % (self._total)
+            else:
+                summary = u'%s test%s failed out of %s test%s' % (self._failed, 's' if self._failed > 1 else '', self._total, 's' if self._total > 1 else '')
         else:
-            rc = results.FAILURE
+            summary = u'no tests detected'
 
-        return rc
+        s = {'step': summary}
+
+        return s
 
     @defer.inlineCallbacks
     def run(self):
@@ -45,4 +55,11 @@ class CTest(ShellMixin, BuildStep):
 
         yield self.runCommand(cmd)
 
-        defer.returnValue(cmd.results())
+        rc = cmd.results()
+        if rc == results.SUCCESS:
+            if self._total is not None and self._failed == 0 and self._total > 0:
+                rc = results.SUCCESS
+            else:
+                rc = results.FAILURE
+
+        defer.returnValue(rc)
